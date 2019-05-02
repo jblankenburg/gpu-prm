@@ -4,6 +4,7 @@
 #include <thrust/sort.h>
 
 #include <iostream>
+#include <fstream>
 #include <random>
 
 int NUM_NNS = 5;
@@ -97,6 +98,31 @@ void print_graph( thrust::host_vector<std::vector<vec2>> e, thrust::device_vecto
   }
 }
 
+/*
+  Write the final graph to a file
+
+  e is the array of edges
+  f is the filtered_points
+  where the edges at index i ( i.e. e[i] ) correspond to the point at f[i]
+*/
+void write_graph( thrust::host_vector<std::vector<vec2>> e, thrust::device_vector<vec2> f) {
+
+  std::ofstream outfile;
+  outfile.open("GPU_graph.txt", std::ofstream::trunc);
+
+  for(int i = 0; i < e.size(); i++) {
+    vec2 tmp = f[i];
+    outfile << tmp.x << "," << tmp.y << std::endl;
+
+    for (auto k = e[i].begin(); k != e[i].end(); ++k)
+      outfile << (*k).x << "," << (*k).y << " ";
+    outfile << std::endl;
+  }
+
+  outfile.close();
+
+}
+
 
 int main(int argc, char **argv)
 {
@@ -112,6 +138,10 @@ int main(int argc, char **argv)
   std::random_device rd;
   std::mt19937 gen(rd()); 
   std::uniform_real_distribution<> dis(0.0, 1.0);
+
+  // //====================================
+  // //start timing
+  // //====================================
 
   // generate N random numbers in the space
   thrust::host_vector<vec2> H = rand_vecs(gen, dis, N);
@@ -189,9 +219,19 @@ int main(int argc, char **argv)
   //-----------------------------------------------------------------------------------
   }
 
+  // //====================================
+  // //end timing
+  // //====================================
+
   // print out the graph
-  print_graph(edges, filter_target);
+  // print_graph(edges, filter_target);
+  write_graph(edges, filter_target);
+
+  // Report timing
+  // std::cout << "Your GPU program TOTAL runtime: \t" << elapsedTime_total << " ms." << std::endl;
 
   // thrust vectors are automatically deleted when the function returns
+  // cudaFree(start_total);
+  // cudaFree(end_total);
   return 0;
 }
