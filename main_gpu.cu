@@ -65,19 +65,37 @@ thrust::host_vector<vec2> rand_vecs(std::mt19937 &gen, std::uniform_real_distrib
   return v;
 }
 
-/*
-  Return the 5 nearest neighbors for each vec2 in v.
+// /*
+//   Return the 5 nearest neighbors for each vec2 in v.
   
-  out[i] is an int representing the k nearest neighbors of v[i].
- */
-thrust::device_vector<int> get_neighbors(const thrust::device_vector<vec2> &v) {
-  thrust::device_vector<int> out;
+//   out[i] is an int representing the k nearest neighbors of v[i].
+//  */
+// thrust::device_vector<int> get_neighbors(const thrust::device_vector<vec2> &v) {
+//   thrust::device_vector<int> out;
 
-  // do stuff
+//   // do stuff
 
-  return out;  
+//   return out;  
+// }
+
+/*
+  Print the final graph to the screen
+
+  e is the array of edges
+  f is the filtered_points
+  where the edges at index i ( i.e. e[i] ) correspond to the point at f[i]
+*/
+void print_graph( thrust::host_vector<std::vector<vec2>> e, thrust::device_vector<vec2> f) {
+  for(int i = 0; i < e.size(); i++) {
+    vec2 tmp = f[i];
+    std::cout << "Vertex: " << " (" << tmp.x << ", " << tmp.y << ") " << std::endl;
+
+    std::cout << "\t Edges: ";
+    for (auto k = e[i].begin(); k != e[i].end(); ++k)
+      std::cout << " (" << (*k).x << ", " << (*k).y << ") ";
+    std::cout << std::endl;
+  }
 }
-
 
 
 int main(int argc, char **argv)
@@ -90,6 +108,7 @@ int main(int argc, char **argv)
   
   int N = std::atoi(argv[1]);
   
+  // set up random number generator
   std::random_device rd;
   std::mt19937 gen(rd()); 
   std::uniform_real_distribution<> dis(0.0, 1.0);
@@ -144,7 +163,7 @@ int main(int argc, char **argv)
 
   // define thing to store the graph
   // vec2[NUM_NNS] nnlist;
-  thrust::host_vector<std::vector<vec2>> graph(filter_target.size());
+  thrust::host_vector<std::vector<vec2>> edges(filter_target.size());
 
   //--------------------
   // find the 5 nearest neighbors from the filtered points
@@ -175,20 +194,20 @@ int main(int argc, char **argv)
 
     // store the closest NUM_NNS neighbors (not including itself, so start at indx 1)
     for( int l = 1; l < NUM_NNS + 1; l++) {
-      graph[i].push_back(target_points[l]);
+      edges[i].push_back(target_points[l]);
     }
 
-    // print out the closest NUM_NNS that were stored
-    std::cout << "\t Stored: ";
-    for (auto k = graph[i].begin(); k != graph[i].end(); ++k)
-      std::cout << " (" << (*k).x << ", " << (*k).y << ") ";
-    std::cout << std::endl;
+    // // print out the closest NUM_NNS that were stored
+    // std::cout << "\t Stored: ";
+    // for (auto k = edges[i].begin(); k != edges[i].end(); ++k)
+    //   std::cout << " (" << (*k).x << ", " << (*k).y << ") ";
+    // std::cout << std::endl;
 
   //--------------------
-
   }
 
-
+  // print out the graph
+  print_graph(edges, filter_target);
 
   // H and D are automatically deleted when the function returns
   return 0;
