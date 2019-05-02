@@ -113,59 +113,42 @@ int main(int argc, char **argv)
   std::mt19937 gen(rd()); 
   std::uniform_real_distribution<> dis(0.0, 1.0);
 
-  // H has storage for N integers
+  // generate N random numbers in the space
   thrust::host_vector<vec2> H = rand_vecs(gen, dis, N);
     
-  // print contents of H
-  for(int i = 0; i < H.size(); i++) {
-    auto tmp = H[i];
-    std::cout << "H[" << i << "] = "
-        << tmp.x << " "
-        << tmp.y << std::endl;
-  }
+  // // print contents of H
+  // for(int i = 0; i < H.size(); i++) {
+  //   auto tmp = H[i];
+  //   std::cout << "H[" << i << "] = "
+  //       << tmp.x << " "
+  //       << tmp.y << std::endl;
+  // }
 
   // Copy host_vector H to device_vector D
   thrust::device_vector<vec2> D = H;
 
-  // thrust::device_vector<float> dists_to_center(D.size());
-
-  // // TODO: this finds the distance for all points to the center point, 
-  // //       need to put this in a loop to get the distance to all points from
-  // //       each and every point, and then copy the smallest 5 from gpu to cpu
-  // //       to store the graph on the cpu.
-  // thrust::transform(D.begin(), D.end(), dists_to_center.begin(), DistTo(0.5, 0.5));
-  // thrust::sort_by_key(dists_to_center.begin(), dists_to_center.end(), D.begin());
-
-  // for(int i = 0; i < dists_to_center.size(); i++) {
-  //   float tmp = dists_to_center[i];
-  //   std::cout << "dists_to_center[" << i << "] = "
-  //       << tmp
-  //       << std::endl;
-  // }
- 
-  // filter based on distance to (0.5, 0.5)
+  // filter based on distance to object at (0.5, 0.5)
   int N_close = thrust::count_if(D.begin(), D.end(), FarEnough(0.5, 0.5, 0.15));
   
   thrust::device_vector<vec2> filter_target(N_close);
   
   thrust::copy_if(D.begin(), D.end(), filter_target.begin(), FarEnough(0.5, 0.5, 0.15));
 
-  std::cout << std::endl;
+  // std::cout << std::endl;
   
-  // print contents of filter_target
-  for(int i = 0; i < filter_target.size(); i++) {
-    vec2 tmp = filter_target[i];
-    std::cout << "D[" << i << "] = "
-        << tmp.x << " " 
-        << tmp.y
-        << std::endl;
-  }
+  // // print contents of filter_target
+  // for(int i = 0; i < filter_target.size(); i++) {
+  //   vec2 tmp = filter_target[i];
+  //   std::cout << "D[" << i << "] = "
+  //       << tmp.x << " " 
+  //       << tmp.y
+  //       << std::endl;
+  // }
 
-  // define thing to store the graph
-  // vec2[NUM_NNS] nnlist;
+  // define thing to store the edges at each point
   thrust::host_vector<std::vector<vec2>> edges(filter_target.size());
 
-  //--------------------
+  //-----------------------------------------------------------------------------------
   // find the 5 nearest neighbors from the filtered points
   thrust::device_vector<float> dists_to_point(filter_target.size());
 
@@ -180,7 +163,7 @@ int main(int argc, char **argv)
     thrust::transform(filter_target.begin(), filter_target.end(), dists_to_point.begin(), DistTo(pnt.x, pnt.y));
     thrust::sort_by_key(dists_to_point.begin(), dists_to_point.end(), target_points.begin());
 
-    std::cout << "Point looking for: (" << pnt.x << ", " << pnt.y << ")" << std::endl;
+    // std::cout << "Point looking for: (" << pnt.x << ", " << pnt.y << ")" << std::endl;
 
     // // print out all distances and the respective points
     // for(int j = 0; j < dists_to_point.size(); j++) {
@@ -203,12 +186,12 @@ int main(int argc, char **argv)
     //   std::cout << " (" << (*k).x << ", " << (*k).y << ") ";
     // std::cout << std::endl;
 
-  //--------------------
+  //-----------------------------------------------------------------------------------
   }
 
   // print out the graph
   print_graph(edges, filter_target);
 
-  // H and D are automatically deleted when the function returns
+  // thrust vectors are automatically deleted when the function returns
   return 0;
 }
